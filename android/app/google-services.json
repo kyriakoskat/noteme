@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "535569013217",
+    "project_id": "noteme-e20c5",
+    "storage_bucket": "noteme-e20c5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:535569013217:android:7efc610c2c549134b35aa0",
+        "android_client_info": {
+          "package_name": "com.example.noteme"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC6jUk_9PQeRUkVcWKdBmqCPGwPv0tE-JA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
