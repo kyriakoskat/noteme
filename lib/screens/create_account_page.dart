@@ -38,8 +38,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
 
       // Save username to Firebase Realtime Database
       final userId = userCredential.user!.uid;
-      DatabaseReference dbRef =
-          FirebaseDatabase.instance.ref("users/$userId");
+      DatabaseReference dbRef = FirebaseDatabase.instance.ref("users/$userId");
       await dbRef.set({
         "username": _usernameController.text.trim(),
         "email": _emailController.text.trim(),
@@ -49,14 +48,21 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         SnackBar(content: Text("Account created successfully!")),
       );
 
-      // Navigate to home or sign-in page
-      Navigator.pop(context);
+      // Reset the loading state
+      setState(() => _isLoading = false);
+
+      // Navigate to the sign-in page
+      Navigator.pushReplacementNamed(context, '/login');
     } on FirebaseAuthException catch (e) {
+      setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message ?? "Error occurred!")),
       );
-    } finally {
+    } catch (e) {
       setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("An unexpected error occurred.")),
+      );
     }
   }
 
@@ -68,7 +74,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         title: Text('Create Account'),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
         ),
         backgroundColor: Colors.purple,
       ),
@@ -80,7 +86,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Image.asset('assets/notebook.png', height: 150),
+                Image.asset('assets/icons/logo.png', height: 150),
                 SizedBox(height: 10),
                 Text("Create account",
                     style: GoogleFonts.poppins(

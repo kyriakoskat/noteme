@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'sign_in_page.dart';
-import 'create_account_page.dart';
 
 class WelcomePage extends StatelessWidget {
   @override
@@ -14,7 +12,7 @@ class WelcomePage extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset('assets/notebook.png', height: 150), // Notebook Image
+              Image.asset('assets/icons/logo.png', height: 150), // Notebook Image
               SizedBox(height: 30),
               Text(
                 "Explore our app",
@@ -34,10 +32,7 @@ class WelcomePage extends StatelessWidget {
                   padding: EdgeInsets.symmetric(vertical: 15, horizontal: 80),
                 ),
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => SignInPage()),
-                  );
+                  Navigator.pushNamed(context, '/login'); // Use named route
                 },
                 child: Text("Sign In",
                     style: GoogleFonts.poppins(
@@ -50,10 +45,7 @@ class WelcomePage extends StatelessWidget {
                   padding: EdgeInsets.symmetric(vertical: 15, horizontal: 60),
                 ),
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => CreateAccountPage()),
-                  );
+                  Navigator.pushNamed(context, '/create-account'); // Use named route
                 },
                 child: Text("Create account",
                     style: GoogleFonts.poppins(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'welcome_page.dart';
 
 class SignInPage extends StatefulWidget {
   @override
@@ -29,7 +28,8 @@ class _SignInPageState extends State<SignInPage> {
         SnackBar(content: Text("Signed in successfully!")),
       );
 
-      // Navigate to a home/dashboard page if needed
+      // Navigate to the Home Page
+      Navigator.pushReplacementNamed(context, '/home');
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message ?? "Sign-in failed!")),
@@ -47,9 +47,7 @@ class _SignInPageState extends State<SignInPage> {
         title: Text('Sign In'),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context); // Navigate back to Welcome Page
-          },
+          onPressed: () => Navigator.pushReplacementNamed(context, '/'),
         ),
         backgroundColor: Colors.purple,
       ),
@@ -61,7 +59,7 @@ class _SignInPageState extends State<SignInPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Image.asset('assets/notebook.png', height: 150),
+                Image.asset('assets/icons/logo.png', height: 150),
                 SizedBox(height: 20),
                 Text("Sign in",
                     style: GoogleFonts.poppins(
@@ -104,7 +102,7 @@ class _SignInPageState extends State<SignInPage> {
                 SizedBox(height: 20),
                 GestureDetector(
                   onTap: () {
-                    Navigator.pop(context); // Return to Welcome Page
+                    Navigator.pushReplacementNamed(context, '/');
                   },
                   child: Text("Back to Welcome Page",
                       style: GoogleFonts.poppins(
