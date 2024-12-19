@@ -47,6 +47,7 @@ class DefaultFirebaseOptions {
     projectId: 'noteme-e20c5',
     authDomain: 'noteme-e20c5.firebaseapp.com',
     storageBucket: 'noteme-e20c5.firebasestorage.app',
+    databaseURL: 'https://noteme-e20c5-default-rtdb.europe-west1.firebasedatabase.app/',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -55,6 +56,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '535569013217',
     projectId: 'noteme-e20c5',
     storageBucket: 'noteme-e20c5.firebasestorage.app',
+    databaseURL: 'https://noteme-e20c5-default-rtdb.europe-west1.firebasedatabase.app/',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -63,6 +65,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '535569013217',
     projectId: 'noteme-e20c5',
     storageBucket: 'noteme-e20c5.firebasestorage.app',
+    databaseURL: 'https://noteme-e20c5-default-rtdb.europe-west1.firebasedatabase.app/',
     iosBundleId: 'com.example.noteme',
   );
 
@@ -72,6 +75,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '535569013217',
     projectId: 'noteme-e20c5',
     storageBucket: 'noteme-e20c5.firebasestorage.app',
+    databaseURL: 'https://noteme-e20c5-default-rtdb.europe-west1.firebasedatabase.app/',
     iosBundleId: 'com.example.noteme',
   );
 
@@ -82,5 +86,6 @@ class DefaultFirebaseOptions {
     projectId: 'noteme-e20c5',
     authDomain: 'noteme-e20c5.firebaseapp.com',
     storageBucket: 'noteme-e20c5.firebasestorage.app',
+    databaseURL: 'https://noteme-e20c5-default-rtdb.europe-west1.firebasedatabase.app/',
   );
 }

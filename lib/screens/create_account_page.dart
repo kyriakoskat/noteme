@@ -1,7 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CreateAccountPage extends StatefulWidget {
   @override
@@ -19,7 +19,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   Future<void> _createAccount() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_passwordController.text != _confirmPasswordController.text) {
+    if (_passwordController.text.trim() != _confirmPasswordController.text.trim()) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Passwords do not match!")),
       );
@@ -29,126 +29,119 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     setState(() => _isLoading = true);
 
     try {
-      // Create user with email and password
-      UserCredential userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
+      // Create user with Firebase Authentication
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      // Save username to Firebase Realtime Database
       final userId = userCredential.user!.uid;
-      DatabaseReference dbRef = FirebaseDatabase.instance.ref("users/$userId");
-      await dbRef.set({
-        "username": _usernameController.text.trim(),
+
+      // Save user data to Firestore
+      final docRef = FirebaseFirestore.instance.collection('users').doc(userId);
+      await docRef.set({
+        "username": _usernameController.text.trim().isEmpty
+            ? "DefaultUser"
+            : _usernameController.text.trim(),
         "email": _emailController.text.trim(),
+        "createdAt": FieldValue.serverTimestamp(),
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Account created successfully!")),
       );
 
-      // Reset the loading state
-      setState(() => _isLoading = false);
-
-      // Navigate to the sign-in page
+      // Navigate to the login page
       Navigator.pushReplacementNamed(context, '/login');
     } on FirebaseAuthException catch (e) {
-      setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? "Error occurred!")),
+        SnackBar(content: Text(e.message ?? "An error occurred!")),
       );
     } catch (e) {
-      setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("An unexpected error occurred.")),
       );
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('Create Account'),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
-        ),
-        backgroundColor: Colors.purple,
+        title: Text("Create Account"),
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(20),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Image.asset('assets/icons/logo.png', height: 150),
-                SizedBox(height: 10),
-                Text("Create account",
-                    style: GoogleFonts.poppins(
-                        fontSize: 24, fontWeight: FontWeight.bold)),
-                SizedBox(height: 20),
-                TextFormField(
-                  controller: _usernameController,
-                  decoration: InputDecoration(
-                    labelText: "Username",
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) =>
-                      value!.isEmpty ? "Please enter a username" : null,
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              Text(
+                "Create Account",
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                 ),
-                SizedBox(height: 15),
-                TextFormField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    labelText: "Email address",
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) =>
-                      value!.isEmpty ? "Please enter an email" : null,
-                ),
-                SizedBox(height: 15),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: "Password",
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) => value!.length < 6
-                      ? "Password must be at least 6 characters"
-                      : null,
-                ),
-                SizedBox(height: 15),
-                TextFormField(
-                  controller: _confirmPasswordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: "Confirm password",
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) =>
-                      value!.isEmpty ? "Please confirm your password" : null,
-                ),
-                SizedBox(height: 20),
-                _isLoading
-                    ? CircularProgressIndicator()
-                    : ElevatedButton(
-                        onPressed: _createAccount,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.purple,
-                          padding: EdgeInsets.symmetric(
-                              vertical: 15, horizontal: 40),
-                        ),
-                        child: Text("Create account",
-                            style: TextStyle(color: Colors.white)),
-                      ),
-              ],
-            ),
+              ),
+              SizedBox(height: 20),
+              TextFormField(
+                controller: _usernameController,
+                decoration: InputDecoration(labelText: "Username"),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return "Please enter a username";
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 15),
+              TextFormField(
+                controller: _emailController,
+                decoration: InputDecoration(labelText: "Email"),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return "Please enter your email";
+                  }
+                  if (!RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w]{2,4}$").hasMatch(value)) {
+                    return "Enter a valid email address";
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 15),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: InputDecoration(labelText: "Password"),
+                validator: (value) {
+                  if (value == null || value.length < 6) {
+                    return "Password must be at least 6 characters";
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 15),
+              TextFormField(
+                controller: _confirmPasswordController,
+                obscureText: true,
+                decoration: InputDecoration(labelText: "Confirm Password"),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return "Please confirm your password";
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              _isLoading
+                  ? CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: _createAccount,
+                      child: Text("Create Account"),
+                    ),
+            ],
           ),
         ),
       ),

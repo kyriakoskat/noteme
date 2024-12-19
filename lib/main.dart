@@ -10,7 +10,7 @@ import 'screens/subjects_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
+  Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   runApp(MyApp());
@@ -21,7 +21,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Welcome App',
-      theme: ThemeData(primarySwatch: Colors.purple),
+      theme: ThemeData(
+        primarySwatch: Colors.purple,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
@@ -30,20 +33,47 @@ class MyApp extends StatelessWidget {
         '/create-account': (context) => CreateAccountPage(),
         '/home': (context) => HomePage(),
       },
-      onGenerateRoute: (settings) {
-        if (settings.name == '/all-courses') {
-          final args = settings.arguments as List<String>;
+      onGenerateRoute: _generateRoute,
+    );
+  }
+
+  Route<dynamic>? _generateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      case '/all-courses':
+        final args = settings.arguments as List<String>?;
+        if (args != null) {
           return MaterialPageRoute(
             builder: (context) => AllCoursesPage(initialSubjects: args),
           );
-        } else if (settings.name == '/subjects') {
-          final args = settings.arguments as List<String>;
+        }
+        return _errorRoute('Invalid or missing arguments for /all-courses.');
+
+      case '/subject':
+        final args = settings.arguments as Map?;
+        if (args != null && args.containsKey('subjectName')) {
           return MaterialPageRoute(
-            builder: (context) => SubjectsPage(subjects: args),
+            builder: (context) => SubjectPage(subjectName: args['subjectName']),
           );
         }
-        return null; // If no matching route is found
-      },
+        return _errorRoute('Invalid or missing arguments for /subject.');
+
+      default:
+        return _errorRoute('Undefined route: ${settings.name}');
+    }
+  }
+
+  MaterialPageRoute _errorRoute(String message) {
+    return MaterialPageRoute(
+      builder: (context) => Scaffold(
+        appBar: AppBar(title: Text('Error')),
+        body: Center(
+          child: Text(
+            message,
+            style: TextStyle(fontSize: 18, color: Colors.red),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
     );
   }
 }
