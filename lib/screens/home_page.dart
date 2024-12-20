@@ -17,7 +17,6 @@ class _HomePageState extends State<HomePage> {
   List<String> _folders = []; // Folders to display on the home page
 
 
-
   @override
   void initState() {
     super.initState();
@@ -78,15 +77,16 @@ class _HomePageState extends State<HomePage> {
     });
 
     final docRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
-    await docRef.set({
+    await docRef.update({
       'folders': _folders,
-    }, SetOptions(merge: true)); // Merge with existing data
-  } catch (e) {
+    }); 
+    } catch (e) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("Failed to save folders: $e")),
     );
   }
 }
+
 
 
 
@@ -163,6 +163,9 @@ void _navigateToSubjectPage(String subject) {
     );
   }
 
+void _navigateToQrCode() {
+    Navigator.pushNamed(context, '/qr-code');
+  }
 
 
   @override
@@ -174,7 +177,7 @@ void _navigateToSubjectPage(String subject) {
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(color: Colors.purple),
+            decoration: BoxDecoration(color: Color(0xFFECE6F0)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
