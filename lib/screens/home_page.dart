@@ -396,7 +396,7 @@ Future<void> calculateAndUpdateUserRating(String userId) async {
                               margin: EdgeInsets.symmetric(vertical: 8),
                               padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.purple.shade50,
+                                color: Color(0xFFECE6F0),
                                 borderRadius: BorderRadius.circular(10),
                                 boxShadow: [
                                   BoxShadow(
