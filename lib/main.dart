@@ -1,19 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 import 'screens/welcome_page.dart';
 import 'screens/sign_in_page.dart';
 import 'screens/create_account_page.dart';
 import 'screens/home_page.dart';
 import 'screens/all_courses_page.dart';
-import 'screens/subjects_page.dart';
+import 'screens/subject_notebooks_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'screens/friends_page.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
   runApp(MyApp());
+  
+
 }
 
 class MyApp extends StatelessWidget {
@@ -32,6 +39,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => SignInPage(),
         '/create-account': (context) => CreateAccountPage(),
         '/home': (context) => HomePage(),
+        '/friends': (context) => FriendsPage(), // Add this route
       },
       onGenerateRoute: _generateRoute,
     );
@@ -52,7 +60,7 @@ class MyApp extends StatelessWidget {
         final args = settings.arguments as Map?;
         if (args != null && args.containsKey('subjectName')) {
           return MaterialPageRoute(
-            builder: (context) => SubjectPage(subjectName: args['subjectName']),
+            builder: (context) => SubjectNotebooksPage(subjectName: args['subjectName']),
           );
         }
         return _errorRoute('Invalid or missing arguments for /subject.');
@@ -77,3 +85,36 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+Future<void> establishFriendship(String userId1, String userId2) async {
+  try {
+    // Add user2 to user1's friends subcollection
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId1)
+        .collection('friends')
+        .doc(userId2)
+        .set({
+      'friendId': userId2,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    // Add user1 to user2's friends subcollection
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId2)
+        .collection('friends')
+        .doc(userId1)
+        .set({
+      'friendId': userId1,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    print("Friendship established between $userId1 and $userId2!");
+  } on FirebaseException catch (e) {
+    print("FirebaseException: ${e.code}, ${e.message}");
+  } catch (e) {
+    print("Unexpected error: $e");
+  }
+}
+

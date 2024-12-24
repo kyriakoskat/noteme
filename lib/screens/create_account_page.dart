@@ -17,54 +17,59 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   bool _isLoading = false;
 
   Future<void> _createAccount() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    if (_passwordController.text.trim() != _confirmPasswordController.text.trim()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Passwords do not match!")),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      // Create user with Firebase Authentication
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-
-      final userId = userCredential.user!.uid;
-
-      // Save user data to Firestore
-      final docRef = FirebaseFirestore.instance.collection('users').doc(userId);
-      await docRef.set({
-        "username": _usernameController.text.trim().isEmpty
-            ? "DefaultUser"
-            : _usernameController.text.trim(),
-        "email": _emailController.text.trim(),
-        "createdAt": FieldValue.serverTimestamp(),
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Account created successfully!")),
-      );
-
-      // Navigate to the login page
-      Navigator.pushReplacementNamed(context, '/login');
-    } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? "An error occurred!")),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("An unexpected error occurred.")),
-      );
-    } finally {
-      setState(() => _isLoading = false);
-    }
+  if (_passwordController.text.trim() != _confirmPasswordController.text.trim()) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Passwords do not match!")),
+    );
+    return;
   }
+
+  setState(() => _isLoading = true);
+
+  try {
+    // Create user with Firebase Authentication
+    UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
+
+    final userId = userCredential.user!.uid;
+
+    // Save user data to Firestore
+    final docRef = FirebaseFirestore.instance.collection('users').doc(userId);
+    await docRef.set({
+      "username": _usernameController.text.trim().isEmpty
+          ? "DefaultUser"
+          : _usernameController.text.trim(),
+      "email": _emailController.text.trim(),
+      "createdAt": FieldValue.serverTimestamp(),
+      "rating": 0.0, // Initialize with a default rating
+      "subjects": [], // Initialize with an empty subjects list
+      "barcode": userId, // Store the user's UID as the barcode data
+      "friends": [],
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Account created successfully!")),
+    );
+
+    // Navigate to the login page
+    Navigator.pushReplacementNamed(context, '/login');
+  } on FirebaseAuthException catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(e.message ?? "An error occurred!")),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("An unexpected error occurred.")),
+    );
+  } finally {
+    setState(() => _isLoading = false);
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {

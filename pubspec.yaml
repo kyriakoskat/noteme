@@ -40,6 +40,16 @@ dependencies:
   firebase_database: ^11.2.0
   cloud_firestore: ^5.5.1
   image_picker: ^1.1.2
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^6.0.2
+  async: ^2.11.0
+  io: ^1.0.5
+  convert: ^3.1.2
+  firebase_storage: ^12.3.7
+  flutter_rating_bar: ^4.0.1
+
+
+  
 
 dev_dependencies:
   flutter_test:
