@@ -9,8 +9,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'add_friend_page.dart';
 import 'subject_notebooks_page.dart';
 import 'friends_page.dart'; 
-
-
+import 'settings_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -66,40 +65,37 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-
-
   void _showBarcodeDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      title: Text(
-        "Your Barcode",
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF65558F)),
-      ),
-      content: Container(
-        width: 200, // Ensure width
-        height: 200, // Ensure height
-        alignment: Alignment.center,
-        child: _barcodeData.isNotEmpty
-            ? QrImageView(
-                data: _barcodeData,
-                version: QrVersions.auto,
-                size: 200.0, // Explicit size for the QR code
-              )
-            : Text("No barcode available", style: TextStyle(color: Colors.grey)),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text("Close", style: TextStyle(color: Color(0xFF65558F))),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        title: Text(
+          "Your Barcode",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF65558F)),
         ),
-      ],
-    ),
-  );
-}
-
+        content: Container(
+          width: 200, // Ensure width
+          height: 200, // Ensure height
+          alignment: Alignment.center,
+          child: _barcodeData.isNotEmpty
+              ? QrImageView(
+                  data: _barcodeData,
+                  version: QrVersions.auto,
+                  size: 200.0, // Explicit size for the QR code
+                )
+              : Text("No barcode available", style: TextStyle(color: Colors.grey)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Close", style: TextStyle(color: Color(0xFF65558F))),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _saveSelectedSubjects(List<String> selectedSubjects) async {
     try {
@@ -122,10 +118,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-
-
-
-
   void _navigateToAllCoursesPage() async {
     // Pass the current subjects to the All Courses page
     final selectedSubjects = await Navigator.pushNamed(
@@ -139,12 +131,6 @@ class _HomePageState extends State<HomePage> {
       _saveSelectedSubjects(selectedSubjects);
     }
   }
-
-  void _logout() async {
-    await FirebaseAuth.instance.signOut();
-    Navigator.pushReplacementNamed(context, '/login');
-  }
-
 
   Widget buildStarRating(double rating) {
     int fullStars = rating.floor(); // Number of full stars
@@ -165,159 +151,157 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Future<void> calculateAndUpdateUserRating(String userId) async {
+    try {
+      // Reference to the notebooks collection
+      final notebooksRef = FirebaseFirestore.instance.collection('notebooks');
 
-Future<void> calculateAndUpdateUserRating(String userId) async {
-  try {
-    // Reference to the notebooks collection
-    final notebooksRef = FirebaseFirestore.instance.collection('notebooks');
+      // Query all public notebooks created by the user
+      final querySnapshot = await notebooksRef
+          .where('created_by', isEqualTo: userId)
+          .where('visibility', isEqualTo: 'public')
+          .get();
 
-    // Query all public notebooks created by the user
-    final querySnapshot = await notebooksRef
-        .where('created_by', isEqualTo: userId)
-        .where('visibility', isEqualTo: 'public')
-        .get();
-
-    if (querySnapshot.docs.isEmpty) {
-      print("No public notebooks found for user: $userId");
-      // If no public notebooks, set the rating to 0.0
-      await FirebaseFirestore.instance.collection('users').doc(userId).update({'rating': 0.0});
-      return;
-    }
-
-    // Calculate the average rating of the user's public notebooks
-    double totalRating = 0.0;
-    int count = 0;
-
-    for (var doc in querySnapshot.docs) {
-      final notebookData = doc.data();
-      if (notebookData.containsKey('rating')) {
-        totalRating += notebookData['rating'] as double;
-        count++;
+      if (querySnapshot.docs.isEmpty) {
+        print("No public notebooks found for user: $userId");
+        // If no public notebooks, set the rating to 0.0
+        await FirebaseFirestore.instance.collection('users').doc(userId).update({'rating': 0.0});
+        return;
       }
+
+      // Calculate the average rating of the user's public notebooks
+      double totalRating = 0.0;
+      int count = 0;
+
+      for (var doc in querySnapshot.docs) {
+        final notebookData = doc.data();
+        if (notebookData.containsKey('rating')) {
+          totalRating += notebookData['rating'] as double;
+          count++;
+        }
+      }
+
+      // If there are rated notebooks, calculate the average
+      final averageRating = count > 0 ? (totalRating / count) : 0.0;
+
+      // Update the user's rating in the users collection
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({'rating': averageRating});
+
+      print("User rating updated to $averageRating for user: $userId");
+    } catch (e) {
+      print("Error calculating and updating user rating: $e");
     }
-
-    // If there are rated notebooks, calculate the average
-    final averageRating = count > 0 ? (totalRating / count) : 0.0;
-
-    // Update the user's rating in the users collection
-    await FirebaseFirestore.instance.collection('users').doc(userId).update({'rating': averageRating});
-
-    print("User rating updated to $averageRating for user: $userId");
-  } catch (e) {
-    print("Error calculating and updating user rating: $e");
   }
-}
 
   Future<void> updateNotebookRating(String notebookId, String raterId, int newRating) async {
-  try {
-    final notebookRef = FirebaseFirestore.instance.collection('notebooks').doc(notebookId);
+    try {
+      final notebookRef = FirebaseFirestore.instance.collection('notebooks').doc(notebookId);
 
-    // Fetch the notebook
-    final notebookSnapshot = await notebookRef.get();
-    if (!notebookSnapshot.exists) {
-      print("Notebook not found: $notebookId");
-      return;
+      // Fetch the notebook
+      final notebookSnapshot = await notebookRef.get();
+      if (!notebookSnapshot.exists) {
+        print("Notebook not found: $notebookId");
+        return;
+      }
+
+      final notebookData = notebookSnapshot.data();
+      if (notebookData == null) return;
+
+      // Update the `rated_by` map
+      Map<String, dynamic> ratedBy = Map<String, dynamic>.from(notebookData['rated_by'] ?? {});
+      ratedBy[raterId] = newRating;
+
+      // Recalculate the notebook's average rating
+      double totalRating = ratedBy.values.fold(0.0, (sum, value) => sum + (value as int));
+      double averageRating = totalRating / ratedBy.length;
+
+      // Update the notebook's `rating` and `rated_by`
+      await notebookRef.update({
+        'rated_by': ratedBy,
+        'rating': averageRating,
+      });
+
+      print("Notebook rating updated to $averageRating");
+
+      // Update the creator's overall rating
+      final createdBy = notebookData['created_by'] as String?;
+      if (createdBy != null) {
+        await calculateAndUpdateUserRating(createdBy);
+      }
+    } catch (e) {
+      print("Error updating notebook rating: $e");
     }
-
-    final notebookData = notebookSnapshot.data();
-    if (notebookData == null) return;
-
-    // Update the `rated_by` map
-    Map<String, dynamic> ratedBy = Map<String, dynamic>.from(notebookData['rated_by'] ?? {});
-    ratedBy[raterId] = newRating;
-
-    // Recalculate the notebook's average rating
-    double totalRating = ratedBy.values.fold(0.0, (sum, value) => sum + (value as int));
-    double averageRating = totalRating / ratedBy.length;
-
-    // Update the notebook's `rating` and `rated_by`
-    await notebookRef.update({
-      'rated_by': ratedBy,
-      'rating': averageRating,
-    });
-
-    print("Notebook rating updated to $averageRating");
-
-    // Update the creator's overall rating
-    final createdBy = notebookData['created_by'] as String?;
-    if (createdBy != null) {
-      await calculateAndUpdateUserRating(createdBy);
-    }
-  } catch (e) {
-    print("Error updating notebook rating: $e");
   }
-}
-
-
-
 
   void _navigateToSubjectPage(String subject) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => SubjectNotebooksPage(subjectName: subject),
-    ),
-  );
-}
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SubjectNotebooksPage(subjectName: subject),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-    backgroundColor: Colors.white,
-    drawer: Drawer(
-  child: ListView(
-    padding: EdgeInsets.zero,
-    children: [
-      // Drawer Header
-      DrawerHeader(
-        decoration: BoxDecoration(
-          color: Color(0xFF65558F),
-        ),
+      backgroundColor: Colors.white,
+      drawer: Drawer(
+        width: 80, // Set the width of the sidebar (adjust as needed)
+        backgroundColor: Color(0xFF65558F), // Match the purple background
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween, // Align icons at top and bottom
           children: [
-            Text(
-              _username,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+            // Top section with icons
+            Column(
+              children: [
+                SizedBox(height: 40), // Add space at the top
+                IconButton(
+                  icon: Icon(Icons.notifications, color: Colors.white, size: 30),
+                  onPressed: () {
+                    // Navigate to notifications page
+                    Navigator.pushNamed(context, '/notifications');
+                  },
+                ),
+                SizedBox(height: 30),
+                IconButton(
+                  icon: Icon(Icons.people, color: Colors.white, size: 30),
+                  onPressed: () {
+                    // Navigate to friends list
+                    Navigator.pushNamed(context, '/friends');
+                  },
+                ),
+                SizedBox(height: 30),
+                IconButton(
+                  icon: Icon(Icons.person_add, color: Colors.white, size: 30),
+                  onPressed: () {
+                    // Navigate to add friend
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => AddFriendPage()));
+                  },
+                ),
+              ],
+            ),
+            // Bottom section with settings icon
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: IconButton(
+                icon: Icon(Icons.settings, color: Colors.white, size: 30),
+                onPressed: () {
+                  // Navigate to the settings page
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SettingsPage()),
+                  );
+                },
               ),
             ),
-            SizedBox(height: 8),
-            // 5-star rating
-            buildStarRating(_rating),
           ],
         ),
       ),
-      // Add Friend Option
-      ListTile(
-        leading: Icon(Icons.person_add, color: Color(0xFF65558F)),
-        title: Text("Add Friend"),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => AddFriendPage()),
-          );
-        },
+      appBar: AppBar(
+        title: Text("Home"),
+        backgroundColor: Color(0xFF65558F),
       ),
-      // Friends Page Option
-      ListTile(
-        leading: Icon(Icons.people, color: Color(0xFF65558F)),
-        title: Text("Friends"),
-        onTap: () {
-          Navigator.pushNamed(context, '/friends');
-        },
-      ),
-    ],
-  ),
-),
-
-    appBar: AppBar(
-      title: Text("Home"),
-      backgroundColor: Color(0xFF65558F),
-    ),
-      
       body: SafeArea(
         child: _isLoading
             ? Center(child: CircularProgressIndicator())
@@ -362,16 +346,9 @@ Future<void> calculateAndUpdateUserRating(String userId) async {
                             buildStarRating(_rating),
                           ],
                         ),
-                        Spacer(),
-                        IconButton(
-                          icon: Icon(Icons.logout,
-                              color: Color(0xFF65558F), size: 30),
-                          onPressed: _logout,
-                        ),
                       ],
                     ),
                     SizedBox(height: 30),
-
                     // My Notes Title
                     Text(
                       "My Subjects",
@@ -383,7 +360,6 @@ Future<void> calculateAndUpdateUserRating(String userId) async {
                     ),
                     Divider(color: Color(0xFF65558F), thickness: 1),
                     SizedBox(height: 20),
-
                     // Subject items
                     Expanded(
                       child: ListView.builder(
@@ -438,5 +414,3 @@ Future<void> calculateAndUpdateUserRating(String userId) async {
     );
   }
 }
-
-
