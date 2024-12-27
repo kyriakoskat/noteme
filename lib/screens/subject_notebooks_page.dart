@@ -28,6 +28,23 @@ class _SubjectNotebooksPageState extends State<SubjectNotebooksPage> {
   return "${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute}";
 }
 
+  Future<void> _deleteNotebook(String notebookId) async {
+  try {
+    // Delete the notebook document from Firestore
+    await FirebaseFirestore.instance.collection('notebooks').doc(notebookId).delete();
+    print("Notebook deleted: $notebookId");
+
+    // Refresh the list of notebooks after deletion
+    fetchNotebooks();
+  } catch (e) {
+    print("Error deleting notebook: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to delete notebook.")),
+    );
+  }
+}
+
+
 
   Future<void> fetchNotebooks() async {
     try {
@@ -57,6 +74,8 @@ class _SubjectNotebooksPageState extends State<SubjectNotebooksPage> {
       });
     }
   }
+
+  
 
   Future<void> _createNewNotebook(String title, String visibility) async {
     try {
@@ -392,25 +411,55 @@ Widget _buildCustomVisibilityButton(
           crossAxisAlignment: CrossAxisAlignment.start, // Align content to the left
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween, // Space out title and "By me"
-              children: [
-                Text(
-                  notebook['title'] ?? 'Notebook name', // Notebook title
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF65558F), // Purple text
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    Text(
+      notebook['title'] ?? 'Notebook name', // Notebook title
+      style: GoogleFonts.poppins(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFF65558F), // Purple text
+      ),
+    ),
+    Row(
+      children: [
+        Text(
+          "By me", // Static text for now
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            color: Color(0xFF65558F),
+          ),
+        ),
+        SizedBox(width: 8),
+        IconButton(
+          icon: Icon(Icons.delete, color: Color(0xFF65558F)),
+          onPressed: () async {
+            bool confirm = await showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text("Delete Notebook"),
+                content: Text("Are you sure you want to delete this notebook?"),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text("Cancel"),
                   ),
-                ),
-                Text(
-                  "By me", // Static text for now
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Color(0xFF65558F),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text("Delete"),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+            );
+            if (confirm) {
+              await _deleteNotebook(notebook['id']);
+            }
+          },
+        ),
+      ],
+    ),
+  ],
+),
             SizedBox(height: 8), // Space between rows
             Text(
   notebook['last_opened'] != null

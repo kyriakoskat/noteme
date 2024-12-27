@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; 
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'subject_page.dart';
@@ -58,14 +58,13 @@ class _AllCoursesPageState extends State<AllCoursesPage> {
   }
 
   void _navigateToSubjectPage(String subjectName, String description) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => SubjectPage(subjectName: subjectName, description: description),
-    ),
-  );
-}
-
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SubjectPage(subjectName: subjectName, description: description),
+      ),
+    );
+  }
 
   void _submitSelection() {
     Navigator.pop(context, _selectedSubjects);
@@ -77,66 +76,84 @@ class _AllCoursesPageState extends State<AllCoursesPage> {
       appBar: AppBar(
         title: Text("All Courses"),
         backgroundColor: Color(0xFF65558F),
-        actions: [
-          TextButton(
-            onPressed: _submitSelection,
-            child: Text(
-              "Save",
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
       ),
+      backgroundColor: Colors.white, // Set page background to white
       body: _isLoading
           ? Center(child: CircularProgressIndicator()) // Show loader while fetching data
           : Padding(
               padding: const EdgeInsets.all(16.0),
-              child: ListView.builder(
-                itemCount: _allSubjects.length,
-                itemBuilder: (context, index) {
-                  final subject = _allSubjects[index];
-                  final subjectName = subject["name"];
-                  final description = subject["description"] ?? "No description available"; // Ensure description is defined
-                  final isSelected = _selectedSubjects.contains(subjectName);
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: _allSubjects.length,
+                      itemBuilder: (context, index) {
+                        final subject = _allSubjects[index];
+                        final subjectName = subject["name"];
+                        final description = subject["description"] ?? "No description available"; // Ensure description is defined
+                        final isSelected = _selectedSubjects.contains(subjectName);
 
-                  return Container(
-                    margin: EdgeInsets.symmetric(vertical: 8),
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.purple.shade100 : Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isSelected ? Color(0xFF65558F) : Colors.grey.shade300,
-                        width: 2,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        // Circle toggle button
-                        GestureDetector(
-                          onTap: () => _toggleSubject(subjectName),
-                          child: Icon(
-                            isSelected ? Icons.check_circle : Icons.circle_outlined,
-                            color: isSelected ? Color(0xFF65558F) : Colors.grey,
-                          ),
-                        ),
-                        SizedBox(width: 10),
-                        // Subject name and navigation
-                        GestureDetector(
-                          onTap: () => _navigateToSubjectPage(subjectName, description),
-                          child: Text(
-                            subjectName,
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isSelected ? Color(0xFF65558F) : Colors.black,
+                        return Container(
+                          margin: EdgeInsets.symmetric(vertical: 8),
+                          padding: EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white, // Always white background
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isSelected ? Color(0xFF65558F) : Colors.grey.shade300,
+                              width: 2,
                             ),
                           ),
-                        ),
-                      ],
+                          child: Row(
+                            children: [
+                              // Circle toggle button
+                              GestureDetector(
+                                onTap: () => _toggleSubject(subjectName),
+                                child: Icon(
+                                  isSelected ? Icons.check_circle : Icons.circle_outlined,
+                                  color: isSelected ? Color(0xFF65558F) : Colors.grey,
+                                  size: 24,
+                                ),
+                              ),
+                              SizedBox(width: 12),
+                              // Subject name and navigation
+                              GestureDetector(
+                                onTap: () => _navigateToSubjectPage(subjectName, description),
+                                child: Text(
+                                  subjectName,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
+                  ),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _submitSelection,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF65558F),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                    ),
+                    child: Text(
+                      "Save",
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
     );
