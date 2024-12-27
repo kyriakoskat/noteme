@@ -24,6 +24,11 @@ class _SubjectNotebooksPageState extends State<SubjectNotebooksPage> {
     fetchNotebooks();
   }
 
+  String _formatTimestamp(DateTime dateTime) {
+  return "${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute}";
+}
+
+
   Future<void> fetchNotebooks() async {
     try {
       final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -310,8 +315,18 @@ Widget _buildCustomVisibilityButton(
     );
   }
 
-  void _navigateToNotebookViewer(String notebookId, String notebookTitle) {
-    Navigator.push(
+  void _navigateToNotebookViewer(String notebookId, String notebookTitle) async {
+  try {
+    // Update the `last_opened` field in Firestore
+    await FirebaseFirestore.instance
+        .collection('notebooks')
+        .doc(notebookId)
+        .update({
+      'last_opened': FieldValue.serverTimestamp(),
+    });
+
+    // Navigate to the notebook viewer and await its result
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => NotebookViewerPage(
@@ -320,7 +335,15 @@ Widget _buildCustomVisibilityButton(
         ),
       ),
     );
+
+    // Refresh notebooks after returning
+    fetchNotebooks();
+  } catch (e) {
+    print("Error updating last_opened field: $e");
   }
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -390,12 +413,15 @@ Widget _buildCustomVisibilityButton(
             ),
             SizedBox(height: 8), // Space between rows
             Text(
-              "Revised: Just now!", // Placeholder for revision info
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: Colors.black87, // Darker text
-              ),
-            ),
+  notebook['last_opened'] != null
+      ? "Last opened: ${_formatTimestamp(notebook['last_opened'].toDate())}"
+      : "Never opened",
+  style: GoogleFonts.poppins(
+    fontSize: 14,
+    color: Colors.black87, // Darker text
+  ),
+),
+
             SizedBox(height: 4), // Space between lines
             Text(
               "For: ${notebook['visibility'] ?? 'Only me'}", // Dynamic visibility text
