@@ -332,6 +332,9 @@ Future<void> updateNotebookRating(String notebookId, String raterId, int newRati
     );
   }
 
+  List<File> _batchImages = [];
+
+
   void _showCameraOrGalleryOptions() {
   showModalBottomSheet(
     context: context,
@@ -339,34 +342,69 @@ Future<void> updateNotebookRating(String notebookId, String raterId, int newRati
       return Container(
         padding: EdgeInsets.symmetric(vertical: 16),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Ensures equal spacing
           children: [
             GestureDetector(
               onTap: () async {
                 Navigator.pop(context); // Close modal
-                await _captureImage(); // Open camera
+                await _captureImage(singlePhoto: true); // Single Photo Mode
               },
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.camera_alt, size: 40, color: Color(0xFF6A1B9A)),
-                  SizedBox(height: 8),
-                  Text("Camera", style: TextStyle(fontSize: 16, color: Color(0xFF6A1B9A))),
-                ],
+              child: SizedBox(
+                width: 100, // Set fixed width for alignment
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.camera_alt, size: 40, color: Color(0xFF6A1B9A)),
+                    SizedBox(height: 8),
+                    Text(
+                      "Single Photo",
+                      style: TextStyle(fontSize: 16, color: Color(0xFF6A1B9A)),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
             ),
             GestureDetector(
               onTap: () async {
                 Navigator.pop(context); // Close modal
-                await _addImage(); // Open gallery
+                await _captureImage(singlePhoto: false); // Batch Capture Mode
               },
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.photo, size: 40, color: Color(0xFF6A1B9A)),
-                  SizedBox(height: 8),
-                  Text("Gallery", style: TextStyle(fontSize: 16, color: Color(0xFF6A1B9A))),
-                ],
+              child: SizedBox(
+                width: 100, // Set fixed width for alignment
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.photo_library, size: 40, color: Color(0xFF6A1B9A)),
+                    SizedBox(height: 8),
+                    Text(
+                      "Batch Capture",
+                      style: TextStyle(fontSize: 16, color: Color(0xFF6A1B9A)),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: () async {
+                Navigator.pop(context); // Close modal
+                await _addImage(); // Gallery Mode
+              },
+              child: SizedBox(
+                width: 100, // Set fixed width for alignment
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.photo, size: 40, color: Color(0xFF6A1B9A)),
+                    SizedBox(height: 8),
+                    Text(
+                      "Gallery",
+                      style: TextStyle(fontSize: 16, color: Color(0xFF6A1B9A)),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -377,42 +415,220 @@ Future<void> updateNotebookRating(String notebookId, String raterId, int newRati
 }
 
 
-  Future<void> _captureImage() async {
-    if (!isEditable) return; // Do nothing if not editable
+  Future<void> _uploadFromGallery() async {
+  if (!isEditable) return; // Do nothing if not editable
 
-    try {
-      final picker = ImagePicker();
+  try {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      await _uploadImage(File(pickedFile.path)); // Use the `_uploadImage` function
+    }
+  } catch (e) {
+    print("Error uploading image from gallery: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to upload image from gallery.")),
+    );
+  }
+}
+
+
+
+  Future<void> _uploadImage(File imageFile) async {
+  try {
+    final storageRef = FirebaseStorage.instance
+        .ref()
+        .child('notebooks/${widget.notebookId}/${DateTime.now().toIso8601String()}');
+
+    final uploadTask = await storageRef.putFile(imageFile);
+
+    final imageUrl = await uploadTask.ref.getDownloadURL();
+
+    await FirebaseFirestore.instance
+        .collection('notebooks')
+        .doc(widget.notebookId)
+        .update({
+      'images': FieldValue.arrayUnion([imageUrl]),
+    });
+
+    setState(() {
+      _images.add(imageUrl); // Add uploaded image to the UI list
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Image uploaded successfully!")),
+    );
+  } catch (e) {
+    print("Error uploading image: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to upload image.")),
+    );
+  }
+}
+
+
+  Future<void> _captureImage({required bool singlePhoto}) async {
+  final picker = ImagePicker();
+
+  if (singlePhoto) {
+    // Single photo mode
+    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+    if (pickedFile != null) {
+      _uploadImage(File(pickedFile.path));
+    }
+  } else {
+    // Batch capture mode
+    bool capturing = true;
+
+    while (capturing) {
       final pickedFile = await picker.pickImage(source: ImageSource.camera);
-
       if (pickedFile != null) {
-        final file = File(pickedFile.path);
-
-        // Upload to Firebase Storage
-        final storageRef = FirebaseStorage.instance
-            .ref()
-            .child('notebooks/${widget.notebookId}/${DateTime.now().toIso8601String()}');
-        final uploadTask = await storageRef.putFile(file);
-
-        // Get the download URL
-        final imageUrl = await uploadTask.ref.getDownloadURL();
-
-        // Update Firestore
-        await FirebaseFirestore.instance
-            .collection('notebooks')
-            .doc(widget.notebookId)
-            .update({
-          'images': FieldValue.arrayUnion([imageUrl]),
-        });
-
-        // Add the image to the list
         setState(() {
-          _images.add(imageUrl);
+          _batchImages.add(File(pickedFile.path)); // Append new photo
         });
+      } else {
+        // If user cancels, break out of the loop
+        capturing = false;
       }
-    } catch (e) {
-      print("Error capturing image: $e");
+    }
+
+    if (_batchImages.isNotEmpty) {
+      // Show review screen
+      _showBatchReviewScreen();
     }
   }
+}
+
+
+  void _showBatchReviewScreen() {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => Scaffold(
+        appBar: AppBar(
+          title: Text("Review Photos"),
+          backgroundColor: Color(0xFF65558F),
+        ),
+        body: StatefulBuilder(
+          builder: (context, setState) {
+            return Column(
+              children: [
+                Expanded(
+                  child: GridView.builder(
+                    padding: const EdgeInsets.all(8.0),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                    ),
+                    itemCount: _batchImages.length,
+                    itemBuilder: (context, index) {
+                      return Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.file(
+                              _batchImages[index],
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            ),
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _batchImages.removeAt(index);
+                                });
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF6A1B9A),
+                                  shape: BoxShape.circle,
+                                ),
+                                padding: EdgeInsets.all(4),
+                                child: Icon(Icons.delete, color: Colors.white, size: 20),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        await _captureImage(singlePhoto: false); // Re-enter batch mode
+                      },
+                      child: Text("Add More Photos"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF6A1B9A),
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: _batchImages.isNotEmpty ? _uploadBatchImages : null,
+                      child: Text("Upload All"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF6A1B9A),
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    ),
+  );
+}
+
+
+
+  Future<void> _uploadBatchImages() async {
+  try {
+    for (var file in _batchImages) {
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('notebooks/${widget.notebookId}/${DateTime.now().toIso8601String()}');
+
+      final uploadTask = await storageRef.putFile(file);
+
+      final imageUrl = await uploadTask.ref.getDownloadURL();
+
+      await FirebaseFirestore.instance
+          .collection('notebooks')
+          .doc(widget.notebookId)
+          .update({
+        'images': FieldValue.arrayUnion([imageUrl]),
+      });
+
+      setState(() {
+        _images.add(imageUrl); // Add uploaded image to the UI list
+      });
+    }
+
+    _batchImages.clear(); // Clear batch
+    Navigator.pop(context); // Close review screen
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("All images uploaded successfully!")),
+    );
+  } catch (e) {
+    print("Error uploading batch images: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to upload images.")),
+    );
+  }
+}
+
 
   Future<void> _addImage() async {
     if (!isEditable) return; // Do nothing if not editable
@@ -516,40 +732,55 @@ Widget build(BuildContext context) {
     ),
     itemCount: _images.isEmpty ? 1 : _images.length + 1, // Always show the camera button
     itemBuilder: (context, index) {
-      if (_images.isEmpty || index == _images.length) {
-        // Camera button as the only or last item
-        return GestureDetector(
-          onTap: _showCameraOrGalleryOptions,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Color(0xFFF3E5F5),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Icon(Icons.camera_alt, size: 50, color: Color(0xFF6A1B9A)),
-            ),
-          ),
-        );
-      }
+  if (_images.isEmpty || index == _images.length) {
+    // Camera button as the only or last item
+    return GestureDetector(
+      onTap: _showCameraOrGalleryOptions,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Color(0xFFF3E5F5),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: Icon(Icons.camera_alt, size: 50, color: Color(0xFF6A1B9A)),
+        ),
+      ),
+    );
+  }
 
-      final imageUrl = _images[index];
-      return GestureDetector(
-        onTap: () => _viewImageFullscreen(index),
-        onLongPress: isEditable
-            ? () => _showDeleteConfirmationDialog(imageUrl)
-            : null,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            imageUrl,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return Icon(Icons.error, color: Colors.red);
-            },
+  final imageUrl = _images[index];
+  return Stack(
+    children: [
+      ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          imageUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Icon(Icons.error, color: Colors.red);
+          },
+        ),
+      ),
+      if (isEditable)
+        Positioned(
+          top: 8,
+          right: 8,
+          child: GestureDetector(
+            onTap: () => _showDeleteConfirmationDialog(imageUrl),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Color(0xFF65558F),
+                shape: BoxShape.circle,
+              ),
+              padding: EdgeInsets.all(4),
+              child: Icon(Icons.delete, color: Colors.white, size: 20),
+            ),
           ),
         ),
-      );
-    },
+    ],
+  );
+},
+
   ),
 ),
 
