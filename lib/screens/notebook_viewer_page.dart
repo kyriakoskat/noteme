@@ -469,30 +469,49 @@ Widget build(BuildContext context) {
                         style: TextStyle(color: Colors.grey, fontSize: 16),
                       ),
                     )
-                  : ListView.builder(
-                      itemCount: _images.length,
-                      itemBuilder: (context, index) {
-                        final imageUrl = _images[index];
-                        return GestureDetector(
-                          onTap: () => _viewImageFullscreen(index),
-                          onLongPress: isEditable
-                              ? () => _showDeleteConfirmationDialog(imageUrl)
-                              : null,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Image.network(
-                              imageUrl,
-                              fit: BoxFit.cover,
-                              height: 300,
-                              width: double.infinity,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.error, color: Colors.red);
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                  : GridView.builder(
+  padding: const EdgeInsets.all(8.0),
+  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+    crossAxisCount: 2, // Number of images per row
+    crossAxisSpacing: 8.0, // Space between columns
+    mainAxisSpacing: 8.0, // Space between rows
+    childAspectRatio: 0.75, // Adjust aspect ratio as needed
+  ),
+  itemCount: _images.length,
+  itemBuilder: (context, index) {
+    final imageUrl = _images[index];
+    return GestureDetector(
+      onTap: () => _viewImageFullscreen(index),
+      onLongPress: isEditable
+          ? () => _showDeleteConfirmationDialog(imageUrl)
+          : null,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12.0),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.3),
+              blurRadius: 5,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12.0),
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Icon(Icons.error, color: Colors.red);
+            },
+          ),
+        ),
+      ),
+    );
+  },
+),
+
             ),
 
             if (!isEditable)

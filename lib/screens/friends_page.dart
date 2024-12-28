@@ -108,6 +108,7 @@ class _FriendsPageState extends State<FriendsPage> {
         title: Text("Friends", style: GoogleFonts.poppins(fontSize: 18)),
         backgroundColor: Color(0xFF65558F),
       ),
+      backgroundColor: Colors.white,
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : _friends.isEmpty
