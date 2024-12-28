@@ -332,6 +332,51 @@ Future<void> updateNotebookRating(String notebookId, String raterId, int newRati
     );
   }
 
+  void _showCameraOrGalleryOptions() {
+  showModalBottomSheet(
+    context: context,
+    builder: (context) {
+      return Container(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            GestureDetector(
+              onTap: () async {
+                Navigator.pop(context); // Close modal
+                await _captureImage(); // Open camera
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.camera_alt, size: 40, color: Color(0xFF6A1B9A)),
+                  SizedBox(height: 8),
+                  Text("Camera", style: TextStyle(fontSize: 16, color: Color(0xFF6A1B9A))),
+                ],
+              ),
+            ),
+            GestureDetector(
+              onTap: () async {
+                Navigator.pop(context); // Close modal
+                await _addImage(); // Open gallery
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.photo, size: 40, color: Color(0xFF6A1B9A)),
+                  SizedBox(height: 8),
+                  Text("Gallery", style: TextStyle(fontSize: 16, color: Color(0xFF6A1B9A))),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+
   Future<void> _captureImage() async {
     if (!isEditable) return; // Do nothing if not editable
 
@@ -460,45 +505,41 @@ Widget build(BuildContext context) {
 
         return Column(
           children: [
-            // Display notebook images
             Expanded(
-              child: _images.isEmpty
-                  ? Center(
-                      child: Text(
-                        "No images added yet.",
-                        style: TextStyle(color: Colors.grey, fontSize: 16),
-                      ),
-                    )
-                  : GridView.builder(
-  padding: const EdgeInsets.all(8.0),
-  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-    crossAxisCount: 2, // Number of images per row
-    crossAxisSpacing: 8.0, // Space between columns
-    mainAxisSpacing: 8.0, // Space between rows
-    childAspectRatio: 0.75, // Adjust aspect ratio as needed
-  ),
-  itemCount: _images.length,
-  itemBuilder: (context, index) {
-    final imageUrl = _images[index];
-    return GestureDetector(
-      onTap: () => _viewImageFullscreen(index),
-      onLongPress: isEditable
-          ? () => _showDeleteConfirmationDialog(imageUrl)
-          : null,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12.0),
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
-              blurRadius: 5,
-              offset: Offset(0, 3),
+  child: GridView.builder(
+    padding: const EdgeInsets.all(8.0),
+    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 2,
+      mainAxisSpacing: 8,
+      crossAxisSpacing: 8,
+      childAspectRatio: 3 / 4, // Adjust this ratio as needed
+    ),
+    itemCount: _images.isEmpty ? 1 : _images.length + 1, // Always show the camera button
+    itemBuilder: (context, index) {
+      if (_images.isEmpty || index == _images.length) {
+        // Camera button as the only or last item
+        return GestureDetector(
+          onTap: _showCameraOrGalleryOptions,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Color(0xFFF3E5F5),
+              borderRadius: BorderRadius.circular(12),
             ),
-          ],
-        ),
+            child: Center(
+              child: Icon(Icons.camera_alt, size: 50, color: Color(0xFF6A1B9A)),
+            ),
+          ),
+        );
+      }
+
+      final imageUrl = _images[index];
+      return GestureDetector(
+        onTap: () => _viewImageFullscreen(index),
+        onLongPress: isEditable
+            ? () => _showDeleteConfirmationDialog(imageUrl)
+            : null,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(12.0),
+          borderRadius: BorderRadius.circular(8),
           child: Image.network(
             imageUrl,
             fit: BoxFit.cover,
@@ -507,12 +548,10 @@ Widget build(BuildContext context) {
             },
           ),
         ),
-      ),
-    );
-  },
+      );
+    },
+  ),
 ),
-
-            ),
 
             if (!isEditable)
               Column(
@@ -532,68 +571,13 @@ Widget build(BuildContext context) {
                   ),
                 ],
               ),
-
-            if (isEditable) ...[
-              SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: _addImage,
-                    child: Container(
-                      height: 100,
-                      width: 100,
-                      margin: EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                        color: Color(0xFF65558F),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.add_a_photo, color: Colors.white, size: 40),
-                          SizedBox(height: 5),
-                          Text(
-                            "Gallery",
-                            style: TextStyle(color: Colors.white, fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: _captureImage,
-                    child: Container(
-                      height: 100,
-                      width: 100,
-                      margin: EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                        color: Color(0xFF65558F),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.camera_alt, color: Colors.white, size: 40),
-                          SizedBox(height: 5),
-                          Text(
-                            "Camera",
-                            style: TextStyle(color: Colors.white, fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 20),
-            ],
           ],
         );
       },
     ),
   );
 }
+
 
 }
 
@@ -632,3 +616,5 @@ class FullScreenImageViewer extends StatelessWidget {
     );
   }
 }
+
+
