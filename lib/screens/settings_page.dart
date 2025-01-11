@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; 
 import 'package:firebase_auth/firebase_auth.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -63,80 +63,64 @@ class _SettingsPageState extends State<SettingsPage> {
                   context,
                   icon: Icons.person,
                   title: "Account",
-                  onTap: () {
-                    Navigator.pushNamed(context, '/account'); // Navigate to Account page
-                  },
+                  onTap: null, // Απενεργοποιημένο onTap
                 ),
                 SizedBox(height: 20),
                 buildSettingsOption(
                   context,
                   icon: Icons.star,
                   title: "Rate App",
-                  onTap: () {
-                    Navigator.pushNamed(context, '/rate_app'); // Navigate to Rate App page
-                  },
+                  onTap: null, // Απενεργοποιημένο onTap
                 ),
                 SizedBox(height: 20),
                 buildSettingsOption(
                   context,
                   icon: Icons.share,
                   title: "Share App",
-                  onTap: () {
-                    Navigator.pushNamed(context, '/share_app'); // Navigate to Share App page
-                  },
+                  onTap: null, // Απενεργοποιημένο onTap
                 ),
                 SizedBox(height: 20),
                 buildSettingsOption(
                   context,
                   icon: Icons.lock,
                   title: "Privacy Policy",
-                  onTap: () {
-                    Navigator.pushNamed(context, '/privacy_policy'); // Navigate to Privacy Policy page
-                  },
+                  onTap: null, // Απενεργοποιημένο onTap
                 ),
                 SizedBox(height: 20),
                 buildSettingsOption(
                   context,
                   icon: Icons.article,
                   title: "Terms and Conditions",
-                  onTap: () {
-                    Navigator.pushNamed(context, '/terms_conditions'); // Navigate to Terms page
-                  },
+                  onTap: null, // Απενεργοποιημένο onTap
                 ),
                 SizedBox(height: 20),
                 buildSettingsOption(
                   context,
                   icon: Icons.policy,
                   title: "Cookies Policy",
-                  onTap: () {
-                    Navigator.pushNamed(context, '/cookies_policy'); // Navigate to Cookies Policy page
-                  },
+                  onTap: null, // Απενεργοποιημένο onTap
                 ),
                 SizedBox(height: 20),
                 buildSettingsOption(
                   context,
                   icon: Icons.mail,
                   title: "Contact",
-                  onTap: () {
-                    Navigator.pushNamed(context, '/contact'); // Navigate to Contact page
-                  },
+                  onTap: null, // Απενεργοποιημένο onTap
                 ),
                 SizedBox(height: 20),
                 buildSettingsOption(
                   context,
                   icon: Icons.feedback,
                   title: "Feedback",
-                  onTap: () {
-                    Navigator.pushNamed(context, '/feedback'); // Navigate to Feedback page
-                  },
+                  onTap: null, // Απενεργοποιημένο onTap
                 ),
                 SizedBox(height: 20),
-                // Logout button with proper logout logic
+                // Logout button με λειτουργικότητα αποσύνδεσης
                 buildSettingsOption(
                   context,
                   icon: Icons.logout,
                   title: "Logout",
-                  onTap: _logout, // Call the logout function
+                  onTap: _logout, // Κλήση της συνάρτησης αποσύνδεσης
                 ),
               ],
             ),
@@ -146,7 +130,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // Widget for Notification toggle
+  // Widget για την επιλογή ειδοποιήσεων με διακόπτη
   Widget buildNotificationOption() {
     return Container(
       color: Colors.white, // White background
@@ -168,9 +152,9 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // Widget for other settings options
+  // Widget για άλλες επιλογές ρυθμίσεων
   Widget buildSettingsOption(BuildContext context,
-      {required IconData icon, required String title, required VoidCallback onTap}) {
+      {required IconData icon, required String title, required VoidCallback? onTap}) {
     return Container(
       color: Colors.white, // White background
       child: ListTile(
@@ -179,9 +163,8 @@ class _SettingsPageState extends State<SettingsPage> {
           title,
           style: TextStyle(color: Colors.black),
         ),
-        onTap: onTap, // Navigate to the appropriate page
+        onTap: onTap, // Αν onTap είναι null, το κουμπί δεν θα ανταποκρίνεται σε πατήματα
       ),
     );
   }
 }
-
