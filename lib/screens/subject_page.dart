@@ -332,6 +332,7 @@ class PublicNotesPage extends StatelessWidget {
       final notesQuery = await FirebaseFirestore.instance
           .collection('notebooks')
           .where('visibility', isEqualTo: 'public')
+          .where('subject', isEqualTo: subjectName)
           .get();
 
       final notes = notesQuery.docs.map((doc) => {"id": doc.id, ...doc.data()}).toList();
