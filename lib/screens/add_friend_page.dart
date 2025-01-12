@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'home_page.dart'; // Update the path as necessary
 import 'friends_page.dart'; // Update the path as necessary
-
 
 class AddFriendPage extends StatefulWidget {
   @override
@@ -29,59 +29,73 @@ class _AddFriendPageState extends State<AddFriendPage> with WidgetsBindingObserv
     _controller.start();
   }
 
+  // Handle barcode detection
   Future<void> _handleBarcode(BarcodeCapture capture) async {
-  if (capture.barcodes.isNotEmpty) {
-    final scannedUserId = capture.barcodes.first.rawValue; // Get the first scanned barcode
-    if (scannedUserId != null) {
-      await _addFriend(scannedUserId);
-      _controller.stop(); // Stop scanning after a successful scan
-      
-      // Navigate to the Friends Page
-      Navigator.pushReplacement(
+    if (capture.barcodes.isNotEmpty) {
+      final scannedUserId = capture.barcodes.first.rawValue; // Get the first scanned barcode
+      if (scannedUserId != null) {
+        await _addFriend(scannedUserId);
+        setState(() => _controller.stop()); // Stop scanning after a successful scan
+        Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => FriendsPage()),
-      );
+      );;
+      }
     }
+  }
+
+  Future<void> _addFriend(String friendId) async {
+  try {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      throw Exception("No user is logged in");
+    }
+
+    final userId = currentUser.uid;
+
+    if (friendId == userId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("You cannot add yourself as a friend!")),
+      );
+      return;
+    }
+
+    // Fetch the friend's details
+    final friendDoc = await FirebaseFirestore.instance.collection('users').doc(friendId).get();
+    if (!friendDoc.exists) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Friend not found!")),
+      );
+      return;
+    }
+
+    final friendData = friendDoc.data();
+    if (friendData == null) return;
+
+    // Add the friend's details to the current user's friends collection
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('friends')
+        .doc(friendId)
+        .set({
+      'id': friendId,
+      'username': friendData['username'] ?? 'Unknown',
+      'rating': friendData['rating'] ?? 0.0,
+      'addedAt': FieldValue.serverTimestamp(),
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Friend added successfully!")),
+    );
+  } catch (e) {
+    print("Error adding friend: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to add friend.")),
+    );
   }
 }
 
-
-  Future<void> _addFriend(String friendId) async {
-    try {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        throw Exception("No user is logged in");
-      }
-
-      final userId = currentUser.uid;
-
-      if (friendId == userId) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("You cannot add yourself as a friend!")),
-        );
-        return;
-      }
-
-      // Add friend to the current user's friends collection
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .collection('friends')
-          .doc(friendId)
-          .set({
-        'addedAt': FieldValue.serverTimestamp(),
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Friend added successfully!")),
-      );
-    } catch (e) {
-      print("Error adding friend: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to add friend.")),
-      );
-    }
-  }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
