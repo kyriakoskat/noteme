@@ -722,67 +722,70 @@ Widget build(BuildContext context) {
         return Column(
           children: [
             Expanded(
-  child: GridView.builder(
-    padding: const EdgeInsets.all(8.0),
-    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: 2,
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
-      childAspectRatio: 3 / 4, // Adjust this ratio as needed
-    ),
-    itemCount: _images.isEmpty ? 1 : _images.length + 1, // Always show the camera button
-    itemBuilder: (context, index) {
-  if (_images.isEmpty || index == _images.length) {
-    // Camera button as the only or last item
-    return GestureDetector(
-      onTap: _showCameraOrGalleryOptions,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Color(0xFFF3E5F5),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Center(
-          child: Icon(Icons.camera_alt, size: 50, color: Color(0xFF6A1B9A)),
-        ),
-      ),
-    );
-  }
+              child: GridView.builder(
+                padding: const EdgeInsets.all(8.0),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 3 / 4, // Adjust this ratio as needed
+                ),
+                itemCount: _images.isEmpty ? 1 : _images.length + 1, // Always show the camera button
+                itemBuilder: (context, index) {
+                  if (_images.isEmpty || index == _images.length) {
+                    // Camera button as the only or last item
+                    return GestureDetector(
+                      onTap: _showCameraOrGalleryOptions,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Color(0xFFF3E5F5),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: Icon(Icons.camera_alt, size: 50, color: Color(0xFF6A1B9A)),
+                        ),
+                      ),
+                    );
+                  }
 
-  final imageUrl = _images[index];
-  return Stack(
-    children: [
-      ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.network(
-          imageUrl,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Icon(Icons.error, color: Colors.red);
-          },
-        ),
-      ),
-      if (isEditable)
-        Positioned(
-          top: 8,
-          right: 8,
-          child: GestureDetector(
-            onTap: () => _showDeleteConfirmationDialog(imageUrl),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Color(0xFF65558F),
-                shape: BoxShape.circle,
+                  final imageUrl = _images[index];
+                  return GestureDetector( // Added GestureDetector
+                    onTap: () => _viewImageFullscreen(index), // Handle tap to view fullscreen
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(Icons.error, color: Colors.red);
+                            },
+                          ),
+                        ),
+                        if (isEditable)
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: GestureDetector(
+                              onTap: () => _showDeleteConfirmationDialog(imageUrl),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF65558F),
+                                  shape: BoxShape.circle,
+                                ),
+                                padding: EdgeInsets.all(4),
+                                child: Icon(Icons.delete, color: Colors.white, size: 20),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
               ),
-              padding: EdgeInsets.all(4),
-              child: Icon(Icons.delete, color: Colors.white, size: 20),
             ),
-          ),
-        ),
-    ],
-  );
-},
-
-  ),
-),
 
             if (!isEditable)
               Column(
@@ -808,6 +811,7 @@ Widget build(BuildContext context) {
     ),
   );
 }
+
 
 
 }
