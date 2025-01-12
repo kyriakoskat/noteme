@@ -10,7 +10,7 @@ import 'screens/all_courses_page.dart';
 import 'screens/subject_notebooks_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'screens/friends_page.dart';
-
+import 'screens/notification_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,6 +40,7 @@ class MyApp extends StatelessWidget {
         '/create-account': (context) => CreateAccountPage(),
         '/home': (context) => HomePage(),
         '/friends': (context) => FriendsPage(), // Add this route
+      	'/notifications': (context) => NotificationPage()
       },
       onGenerateRoute: _generateRoute,
     );
