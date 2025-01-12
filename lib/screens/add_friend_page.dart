@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'friends_page.dart'; // Update the path as necessary
 
 
 class AddFriendPage extends StatefulWidget {
@@ -28,17 +29,22 @@ class _AddFriendPageState extends State<AddFriendPage> with WidgetsBindingObserv
     _controller.start();
   }
 
-  // Handle barcode detection
   Future<void> _handleBarcode(BarcodeCapture capture) async {
-    if (capture.barcodes.isNotEmpty) {
-      final scannedUserId = capture.barcodes.first.rawValue; // Get the first scanned barcode
-      if (scannedUserId != null) {
-        await _addFriend(scannedUserId);
-        setState(() => _controller.stop()); // Stop scanning after a successful scan
-        Navigator.pop(context);
-      }
+  if (capture.barcodes.isNotEmpty) {
+    final scannedUserId = capture.barcodes.first.rawValue; // Get the first scanned barcode
+    if (scannedUserId != null) {
+      await _addFriend(scannedUserId);
+      _controller.stop(); // Stop scanning after a successful scan
+      
+      // Navigate to the Friends Page
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => FriendsPage()),
+      );
     }
   }
+}
+
 
   Future<void> _addFriend(String friendId) async {
     try {
